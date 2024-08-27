@@ -147,23 +147,23 @@ public class GetCountriesApiTests {
 
     @Test
     void verifyCountryByFilterGivenGreaterThan(){
-        verifyCountryByFilterGiven(5000, "GreaterThan");
+        verifyCountryByFilterGiven(5000, ">");
     }
     @Test
     void verifyCountryByFilterGivenGreaterThanOrEqualTo(){
-        verifyCountryByFilterGiven(5000, "GreaterThanOrEqualTo");
+        verifyCountryByFilterGiven(5000, ">=");
     }
     @Test
     void verifyCountryByFilterGivenEqualTo(){
-        verifyCountryByFilterGiven(5000, "EqualTo");
+        verifyCountryByFilterGiven(5000, "==");
     }
     @Test
     void verifyCountryByFilterGivenNotEqualTo(){
-        verifyCountryByFilterGiven(5000, "NotEqualTo");
+        verifyCountryByFilterGiven(5000, "!=");
     }
     @Test
     void verifyCountryByFilterGivenLessThan(){
-        verifyCountryByFilterGiven(5000, "LessThan");
+        verifyCountryByFilterGiven(5000, "<");
     }
     @Test //This is the original approach before verifyCountryByFilterGiven() is made
     void verifyCountryByFilterGivenLessThanOrEqualTo(){
@@ -177,41 +177,18 @@ public class GetCountriesApiTests {
     }
 
     void verifyCountryByFilterGiven(float gdp, String operator){
-        String a;
-        Matcher<Float> matcher;
-        switch (operator){
-            case "NotEqualTo":
-                a = "!=";
-                matcher = (Matcher<Float>) not(equalTo(gdp));
-                break;
-            case "EqualTo":
-                a = "==";
-                matcher = (Matcher<Float>) equalTo(gdp);
-                break;
-            case "GreaterThan":
-                a = ">";
-                matcher = (Matcher<Float>) greaterThan(gdp);
-                break;
-            case "GreaterThanOrEqualTo":
-                a = ">=";
-                matcher = (Matcher<Float>) greaterThanOrEqualTo(gdp);
-                break;
-            case "LessThan":
-                a = "<";
-                matcher = (Matcher<Float>) lessThan(gdp);
-                break;
-            case "LessThanOrEqualTo":
-                a = "<=";
-                matcher = (Matcher<Float>) lessThanOrEqualTo(gdp);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported operator: " + operator +
-                        "\nPls use following operator: " +
-                        "\nNotEqualTo, EqualTo, GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo");
-        }
+        Matcher<Float> matcher = switch (operator) {
+            case "!=" -> (Matcher<Float>) not(equalTo(gdp));
+            case "==" -> (Matcher<Float>) equalTo(gdp);
+            case ">" -> (Matcher<Float>) greaterThan(gdp);
+            case ">=" -> (Matcher<Float>) greaterThanOrEqualTo(gdp);
+            case "<" -> (Matcher<Float>) lessThan(gdp);
+            case "<=" -> (Matcher<Float>) lessThanOrEqualTo(gdp);
+            default -> throw new IllegalArgumentException("Unsupported operator: " + operator);
+        };
         Response actualResponse = RestAssured.given().log().all()
                 .queryParam("gdp", gdp)
-                .queryParam("operator", a)
+                .queryParam("operator", operator)
                 .get(GET_COUNTRIES_PATH_V3);
         List<CountryVersionTwo> countries = actualResponse.as(new TypeRef<List<CountryVersionTwo>>() {});
         final Matcher<Float> finalMatcher = matcher;
