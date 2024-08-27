@@ -16,6 +16,9 @@ dependencies {
     testImplementation 'io.rest-assured:rest-assured:5.5.0'
     testImplementation group: 'io.rest-assured', name: 'json-schema-validator', version: '5.5.0'
     testImplementation 'net.javacrumbs.json-unit:json-unit:3.4.1'
+    //help generate class
+    testCompileOnly 'org.projectlombok:lombok:1.18.34'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
 }
 
 test {
