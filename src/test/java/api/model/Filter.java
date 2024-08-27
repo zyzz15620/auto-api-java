@@ -10,6 +10,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Filter {
-    private double gdp;
+    private float gdp;
     private String operator;
 }

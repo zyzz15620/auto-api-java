@@ -2,13 +2,15 @@ package api.test;
 
 import api.data.GetCountriesData;
 import api.model.Country;
-import api.model.Filter;
+import api.model.CountryVersionTwo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
 import net.javacrumbs.jsonunit.core.Option;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,11 +25,12 @@ import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInC
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonPartEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 
 public class GetCountriesApiTests {
     private static final String GET_COUNTRIES_PATH = "/api/v1/countries";
+    private static final String GET_COUNTRIES_PATH_V3 = "/api/v3/countries";
     private static final String GET_COUNTRIES_PATH_V2 = "/api/v2/countries";
     private static final String GET_COUNTRIES_BY_CODE_PATH = "/api/v1/countries/{code}";
     private static final String GET_COUNTRIES_BY_FILTER_PATH_V3 = "/api/v3/countries?gdp={gdp}&operator={operator}";
@@ -106,39 +109,112 @@ public class GetCountriesApiTests {
         assertThat(String.format("Actual: %s\n Expected: %s\n", actualResponseBody, country),actualResponseBody, jsonEquals(country)); //since this is 2 object, we don't need to care about it's order
     }
 
-    //API 4
-    static Stream<Filter> filterProvider() throws JsonProcessingException {
+//    //API 4
+//    static Stream<Filter> filterProvider() throws JsonProcessingException {
+//        ObjectMapper mapper = new ObjectMapper();
+//        List<Filter> filters = mapper.readValue(GetCountriesData.FILTER_INPUT_DATA_V3, new TypeReference<List<Filter>>() {});
+//        return filters.stream();
+//    }
+//    @ParameterizedTest
+//    @MethodSource("filterProvider")
+//    public void verifyGetCountriesApiByFilterResponseSchemaV3(Filter filter){
+//        RestAssured.given()
+//                .queryParam("gdp", Double.toString(filter.getGdp()))
+//                .queryParam("operator", filter.getOperator())
+//                .get(GET_COUNTRIES_PATH_V3)
+//                .then()
+//                .assertThat()
+//                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-by-filter-json-schema-v3.json"));
+//    }
+//    @ParameterizedTest
+//    @MethodSource("filterProvider")
+//    public void verifyGetCountriesApiByFilterResponseValueV3(Filter filter){
+//        Response actualResponse = RestAssured.given()
+//                .queryParam("gdp", filter.getGdp())
+//                .queryParam("operator", filter.getOperator())
+//                .get(GET_COUNTRIES_PATH_V3);
+//        String actualResponseBody = actualResponse.asString();
+//        //1. Write your own json filter and then compare with api result
+//        //2. Iterate each country in actualResponse and see if it in GET_COUNTRIES_BY_FILTER_V3, and see if that country comply with the provided filter
+//    }
+
+    public void filterCountriesWithGdpV3(float gdp, String operator) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        List<Filter> filters = mapper.readValue(GetCountriesData.FILTER_INPUT_DATA_V3, new TypeReference<List<Filter>>() {});
-        return filters.stream();
-    }
-    @ParameterizedTest
-    @MethodSource("filterProvider")
-    public void verifyGetCountriesApiByFilterResponseSchemaV3(Filter filter){
-        RestAssured.given()
-                .pathParam("gdp", Double.toString(filter.getGdp()))
-                .pathParam("operator", filter.getOperator())
-                .get(GET_COUNTRIES_BY_FILTER_PATH_V3)
-                .then()
-                .assertThat()
-                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-by-filter-json-schema-v3.json"));
-    }
-    @ParameterizedTest
-    @MethodSource("filterProvider")
-    public void verifyGetCountriesApiByFilterResponseValueV3(Filter filter){
-        Response actualResponse = RestAssured.given()
-                .pathParam("gdp", filter.getGdp())
-                .pathParam("operator", filter.getOperator())
-                .get(GET_COUNTRIES_BY_FILTER_PATH_V3);
-        String actualResponseBody = actualResponse.asString();
-        //1. Write your own json filter and then compare with api result
-        //2. Iterate each country in actualResponse and see if it in GET_COUNTRIES_BY_FILTER_V3, and see if that country comply with the provided filter
+        List<CountryVersionTwo> countries = mapper.readValue(GetCountriesData.ALL_COUNTRIES_V3, new TypeReference<List<CountryVersionTwo>>() {});
     }
 
-    public void filterCountriesWithGdpV3(double gdp, String operator) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        List<Country> countries = mapper.readValue(GetCountriesData.ALL_COUNTRIES_V3, new TypeReference<List<Country>>() {});
 
+
+    @Test
+    void verifyCountryByFilterGivenGreaterThan(){
+        verifyCountryByFilterGiven(5000, "GreaterThan");
+    }
+    @Test
+    void verifyCountryByFilterGivenGreaterThanOrEqualTo(){
+        verifyCountryByFilterGiven(5000, "GreaterThanOrEqualTo");
+    }
+    @Test
+    void verifyCountryByFilterGivenEqualTo(){
+        verifyCountryByFilterGiven(5000, "EqualTo");
+    }
+    @Test
+    void verifyCountryByFilterGivenNotEqualTo(){
+        verifyCountryByFilterGiven(5000, "NotEqualTo");
+    }
+    @Test
+    void verifyCountryByFilterGivenLessThan(){
+        verifyCountryByFilterGiven(5000, "LessThan");
+    }
+    @Test //This is the original approach before verifyCountryByFilterGiven() is made
+    void verifyCountryByFilterGivenLessThanOrEqualTo(){
+        Response actualResponse = RestAssured.given().log().all()
+                .queryParam("gdp", 5000)
+                .queryParam("operator", "<=")
+                .get(GET_COUNTRIES_PATH_V3);
+        assertThat(200,equalTo(actualResponse.statusCode()));
+        List<CountryVersionTwo> countries = actualResponse.as(new TypeRef<List<CountryVersionTwo>>() {});
+        countries.forEach(country -> assertThat(country.getGdp(), not(equalTo(5000f))));
     }
 
+    void verifyCountryByFilterGiven(float gdp, String operator){
+        String a;
+        Matcher<Float> matcher;
+        switch (operator){
+            case "NotEqualTo":
+                a = "!=";
+                matcher = (Matcher<Float>) not(equalTo(gdp));
+                break;
+            case "EqualTo":
+                a = "==";
+                matcher = (Matcher<Float>) equalTo(gdp);
+                break;
+            case "GreaterThan":
+                a = ">";
+                matcher = (Matcher<Float>) greaterThan(gdp);
+                break;
+            case "GreaterThanOrEqualTo":
+                a = ">=";
+                matcher = (Matcher<Float>) greaterThanOrEqualTo(gdp);
+                break;
+            case "LessThan":
+                a = "<";
+                matcher = (Matcher<Float>) lessThan(gdp);
+                break;
+            case "LessThanOrEqualTo":
+                a = "<=";
+                matcher = (Matcher<Float>) lessThanOrEqualTo(gdp);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported operator: " + operator +
+                        "\nPls use following operator: " +
+                        "\nNotEqualTo, EqualTo, GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo");
+        }
+        Response actualResponse = RestAssured.given().log().all()
+                .queryParam("gdp", gdp)
+                .queryParam("operator", a)
+                .get(GET_COUNTRIES_PATH_V3);
+        List<CountryVersionTwo> countries = actualResponse.as(new TypeRef<List<CountryVersionTwo>>() {});
+        final Matcher<Float> finalMatcher = matcher;
+        countries.forEach(country -> assertThat(country.getGdp(), finalMatcher ));
+    }
 }
