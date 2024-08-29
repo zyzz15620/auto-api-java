@@ -2,6 +2,7 @@ package api.test;
 
 import api.data.GetCountriesData;
 import api.model.Country;
+import api.model.CountryPagination;
 import api.model.CountryVerTwo;
 import api.model.Filter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,6 +32,7 @@ import static org.hamcrest.Matchers.*;
 
 public class GetCountriesApiTests {
     private static final String GET_COUNTRIES_PATH = "/api/v1/countries";
+    private static final String GET_COUNTRIES_PATH_V4 = "/api/v4/countries";
     private static final String GET_COUNTRIES_PATH_V3 = "/api/v3/countries";
     private static final String GET_COUNTRIES_PATH_V2 = "/api/v2/countries";
     private static final String GET_COUNTRIES_BY_CODE_PATH = "/api/v1/countries/{code}";
@@ -147,7 +149,6 @@ public class GetCountriesApiTests {
         List<CountryVerTwo> countries = actualResponse.as(new TypeRef<>() {});
         countries.forEach(country -> assertThat(country.getGdp(), matcher));
     }
-
     static Stream<Map<String, String>> filterProvider() throws JsonProcessingException {
         List<Map<String, String>> filter = new ArrayList<>();
         filter.add(Map.of("gdp","5000", "operator", ">"));
@@ -157,5 +158,39 @@ public class GetCountriesApiTests {
         filter.add(Map.of("gdp","5000", "operator", "=="));
         filter.add(Map.of("gdp","5000", "operator", "!="));
         return filter.stream();
+    }
+
+    @Test
+    void verifyGetCountriesPagination(){
+        int PAGE_SIZE = 3;
+        CountryPagination countryPaginationFirstPage = getCountryPagination(1, PAGE_SIZE);
+        CountryPagination countryPaginationSecondPage = getCountryPagination(1, PAGE_SIZE);
+        assertThat(countryPaginationFirstPage.getData().size(), equalTo(PAGE_SIZE));
+        assertThat(countryPaginationSecondPage.getData().size(), equalTo(PAGE_SIZE));
+        assertThat(countryPaginationFirstPage.getData().containsAll(countryPaginationSecondPage.getData()), is(false));
+
+        int sizeOfLastPage = countryPaginationFirstPage.getTotal() % PAGE_SIZE;
+        int lastPage = countryPaginationFirstPage.getTotal() / PAGE_SIZE;
+        if(sizeOfLastPage>0){
+            lastPage++;
+        } else if (sizeOfLastPage == 0) {
+            sizeOfLastPage = PAGE_SIZE;
+        }
+        CountryPagination countryPaginationLastPage = getCountryPagination(lastPage, PAGE_SIZE);
+        assertThat(countryPaginationLastPage.getData().size(), equalTo(sizeOfLastPage));
+
+        CountryPagination countryPaginationLastPagePlus = getCountryPagination(lastPage + 1, PAGE_SIZE);
+        assertThat(countryPaginationLastPagePlus.getData().size(), equalTo(0));
+        //there might be a problem where number of page is 1-2, so we have to reduce the size to get more page
+    }
+
+    private static CountryPagination getCountryPagination(int page, int PAGE_SIZE) {
+        Response actualResponsePagination = RestAssured.given().log().all()
+                .queryParam("page", page)
+                .queryParam("size", PAGE_SIZE)
+                .get(GET_COUNTRIES_PATH_V4);
+        CountryPagination countryPagination = actualResponsePagination.as(new TypeRef<CountryPagination>() {
+        });
+        return countryPagination;
     }
 }
