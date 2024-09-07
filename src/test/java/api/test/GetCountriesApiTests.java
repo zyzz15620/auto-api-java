@@ -3,8 +3,6 @@ package api.test;
 import api.data.GetCountriesData;
 import api.model.Country;
 import api.model.CountryPagination;
-import api.model.CountryVerTwo;
-import api.model.Filter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +30,7 @@ import static org.hamcrest.Matchers.*;
 
 public class GetCountriesApiTests {
     private static final String GET_COUNTRIES_PATH = "/api/v1/countries";
+    private static final String GET_COUNTRIES_PATH_V5 = "/api/v5/countries";
     private static final String GET_COUNTRIES_PATH_V4 = "/api/v4/countries";
     private static final String GET_COUNTRIES_PATH_V3 = "/api/v3/countries";
     private static final String GET_COUNTRIES_PATH_V2 = "/api/v2/countries";
@@ -100,7 +99,7 @@ public class GetCountriesApiTests {
                 .pathParam("code", country.getCode())
                 .log().all().get(GET_COUNTRIES_BY_CODE_PATH);
         assertThat(200, equalTo(actualResponse.statusCode()));
-        String actualResponseBody = actualResponse.asString();
+        Country actualResponseBody = actualResponse.as(Country.class);
         assertThat(String.format("Actual: %s\n Expected: %s\n", actualResponseBody, country),actualResponseBody, jsonEquals(country)); //since this is 2 object, we don't need to care about it's order
     }
 
@@ -146,7 +145,7 @@ public class GetCountriesApiTests {
                 .queryParam("operator", queryParams.get("operator"))
                 .get(GET_COUNTRIES_PATH_V3);
         assertThat(200,equalTo(actualResponse.statusCode()));
-        List<CountryVerTwo> countries = actualResponse.as(new TypeRef<>() {});
+        List<Country> countries = actualResponse.as(new TypeRef<>() {});
         countries.forEach(country -> assertThat(country.getGdp(), matcher));
     }
     static Stream<Map<String, String>> filterProvider() throws JsonProcessingException {
@@ -189,8 +188,16 @@ public class GetCountriesApiTests {
                 .queryParam("page", page)
                 .queryParam("size", PAGE_SIZE)
                 .get(GET_COUNTRIES_PATH_V4);
-        CountryPagination countryPagination = actualResponsePagination.as(new TypeRef<CountryPagination>() {
+        return actualResponsePagination.as(new TypeRef<CountryPagination>() {
         });
-        return countryPagination;
+    }
+
+    @Test
+    void verifyGetCountriesPrivate(){
+        String actualResponse = RestAssured.given().log().all()
+                .header("api-key", "private")
+                .get(GET_COUNTRIES_PATH_V5).asString();
+        String expect = GetCountriesData.ALL_COUNTRIES_V5_PRIVATE;
+        assertThat(actualResponse, jsonEquals(expect).when(Option.IGNORING_ARRAY_ORDER));
     }
 }
