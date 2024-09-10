@@ -1,6 +1,20 @@
-[
-  {
-    "name": "Viet Nam",
-    "code": "VN"
-  }
-]
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "middleName": "Smith",
+  "birthday": "01-23-2000",
+  "email": "meow@xyz.com",
+  "phone": "0123456789",
+  "address": [
+    {
+      "streetNumber": "123",
+      "street": "Main St",
+      "ward": "Ward 1",
+      "district": "District 1",
+      "city": "Thu Duc",
+      "state": "Ho Chi Minh",
+      "zip": "7000",
+      "country": "VN"
+    }
+  ]
+}
