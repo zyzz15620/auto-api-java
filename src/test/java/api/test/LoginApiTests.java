@@ -54,7 +54,7 @@ public class LoginApiTests {
         );
     }
 
-    public Response getStaffLoginResponse(String username, String password){
+    public static Response getStaffLoginResponse(String username, String password){
         LoginInput loginInput = new LoginInput(username, password);
         return RestAssured.given().log().all()
                 .header("Content-Type", "application/json")

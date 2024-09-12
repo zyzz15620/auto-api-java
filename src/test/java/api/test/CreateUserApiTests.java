@@ -1,6 +1,5 @@
 package api.test;
 
-import api.model.login.LoginInput;
 import api.model.login.LoginResponse;
 import api.model.user.Address;
 import api.model.user.CreateUserResponse;
@@ -12,13 +11,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static api.test.LoginApiTests.getStaffLoginResponse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.equalTo;
 
 public class CreateUserApiTests {
     private static final String CREATE_USER_PATH = "/api/user";
-    private static final String LOGIN_PATH = "/api/login";
 
     @BeforeAll
     static void setUp(){
@@ -28,11 +27,7 @@ public class CreateUserApiTests {
 
     @Test
     public void verifyStaffCreateUserSuccessfully(){
-        LoginInput loginInput = new LoginInput("staff", "1234567890");
-        Response actualResponse = RestAssured.given().log().all()
-                .header("Content-Type", "application/json")
-                .body(loginInput)
-                .post(LOGIN_PATH);
+        Response actualResponse = getStaffLoginResponse("staff", "1234567890");
         assertThat(actualResponse.statusCode(), equalTo(200));
         LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
         assertThat(loginResponse.getToken(), not(blankString()));
@@ -55,7 +50,6 @@ public class CreateUserApiTests {
         user.setEmail("meow2@xyz.com");
         user.setPhone("0123456788");
         user.setAddresses(List.of(address));
-
 
         Response createUserResponse = RestAssured.given().log().all()
                 .header("Content-Type", "application/json")
