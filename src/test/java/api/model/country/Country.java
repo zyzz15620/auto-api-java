@@ -1,4 +1,4 @@
-package api.model;
+package api.model.country;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

@@ -1,8 +1,8 @@
 package api.test;
 
 import api.data.GetCountriesData;
-import api.model.Country;
-import api.model.CountryPagination;
+import api.model.country.Country;
+import api.model.country.CountryPagination;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -148,7 +148,7 @@ public class GetCountriesApiTests {
         List<Country> countries = actualResponse.as(new TypeRef<>() {});
         countries.forEach(country -> assertThat(country.getGdp(), matcher));
     }
-    static Stream<Map<String, String>> filterProvider() throws JsonProcessingException {
+    static Stream<Map<String, String>> filterProvider() {
         List<Map<String, String>> filter = new ArrayList<>();
         filter.add(Map.of("gdp","5000", "operator", ">"));
         filter.add(Map.of("gdp","5000", "operator", ">="));
@@ -180,7 +180,7 @@ public class GetCountriesApiTests {
 
         CountryPagination countryPaginationLastPagePlus = getCountryPagination(lastPage + 1, PAGE_SIZE);
         assertThat(countryPaginationLastPagePlus.getData().size(), equalTo(0));
-        //there might be a problem where number of page is 1-2, so we have to reduce the size to get more page
+        //there might be a problem where number of page is 1-2, so sometimes we have to reduce the size to get more page
     }
 
     private static CountryPagination getCountryPagination(int page, int PAGE_SIZE) {
@@ -188,7 +188,7 @@ public class GetCountriesApiTests {
                 .queryParam("page", page)
                 .queryParam("size", PAGE_SIZE)
                 .get(GET_COUNTRIES_PATH_V4);
-        return actualResponsePagination.as(new TypeRef<CountryPagination>() {
+        return actualResponsePagination.as(new TypeRef<>() {
         });
     }
 

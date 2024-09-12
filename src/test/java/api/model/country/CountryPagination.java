@@ -1,4 +1,4 @@
-package api.model;
+package api.model.country;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
