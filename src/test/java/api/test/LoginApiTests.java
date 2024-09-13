@@ -35,7 +35,7 @@ public class LoginApiTests {
     }
 
     @ParameterizedTest
-    @MethodSource("InvalidInputs")
+    @MethodSource("invalidInputs")
     public void verifyStaffLoginInvalidInput(List<String> InvalidInputs){
         Response actualResponse = getStaffLoginResponse(InvalidInputs.get(1), InvalidInputs.get(2));
         assertThat(actualResponse.statusCode(), equalTo(401));
@@ -43,7 +43,7 @@ public class LoginApiTests {
         assertThat(loginResponse.getMessage(), equalTo("Invalid credentials"));
     }
 
-    static Stream<List<String>> InvalidInputs(){
+    static Stream<List<String>> invalidInputs(){
         return Stream.of(
                 Arrays.asList("Valid-Invalid", "staff", "123456780"),
                 Arrays.asList("Invalid-Valid", "staff1", "1234567890"),
