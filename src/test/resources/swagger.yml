@@ -71,28 +71,28 @@ paths:
           description: Internal server error
   /api/user/{id}:
     get:
-        summary: Get user information
-        responses:
-          "200":
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/GetUser"
-            description: Successful response
-          "400":
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/CreateUserBadRequest"
-            description: Bad request
-          "401":
-            description: Unauthorized
-          "403":
-            description: Forbidden
-          "404":  
-            description: Not found
-          "500":    
-            description: Internal server error
+      summary: Get user information
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetUser"
+          description: Successful response
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUserBadRequest"
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "500":
+          description: Internal server error
     put:
       summary: Update user information
       requestBody:
@@ -173,7 +173,7 @@ paths:
                   example: "123e4567-e89b-12d3-a456-426614174000"
                 type:
                   type: string
-                  enum: ["GOLD", "SILVER", "PLATINUM"]
+                  enum: [ "GOLD", "SILVER", "PLATINUM" ]
               required:
                 - userId
                 - type

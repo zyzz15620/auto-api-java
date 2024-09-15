@@ -37,70 +37,73 @@ public class GetCountriesApiTests {
     private static final String GET_COUNTRIES_BY_CODE_PATH = "/api/v1/countries/{code}";
 
     @BeforeAll
-    static void setUp(){
+    static void setUp() {
         RestAssured.baseURI = "http://localhost";
-        RestAssured.port =  3000;
-    }
-
-    //API 1
-    @Test
-    public void verifyGetCountriesApiResponseSchema(){
-        RestAssured.get(GET_COUNTRIES_PATH)
-                .then()
-                .assertThat()
-                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-json-schema.json"));
-    }
-    @Test
-    public void verifyGetCountriesApiResponseValue(){
-        String expected = GetCountriesData.ALL_COUNTRIES;
-        Response actualResponse = RestAssured.get(GET_COUNTRIES_PATH);
-        String actualResponseBody = actualResponse.asString();
-        assertThat(actualResponseBody, jsonEquals(expected).when(Option.IGNORING_ARRAY_ORDER));
-        assertThat(actualResponseBody, jsonPartEquals("[0].name" , "Viet Nam")); //not needed
-    }
-
-    //API 2
-    @Test
-    public void verifyGetCountriesApiResponseSchemaV2(){
-        RestAssured.get(GET_COUNTRIES_PATH_V2)
-                .then()
-                .assertThat()
-                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-json-schema-v2.json"));
-    }
-    @Test
-    public void verifyGetCountriesApiResponseValueV2(){
-        String expected = GetCountriesData.ALL_COUNTRIES_V2;
-        Response actualResponse = RestAssured.get(GET_COUNTRIES_PATH_V2);
-        String actualResponseBody = actualResponse.asString();
-        assertThat(actualResponseBody, jsonEquals(expected).when(Option.IGNORING_ARRAY_ORDER));
-        assertThat(actualResponseBody, jsonPartEquals("[0].gdp" , 223.9)); //not needed
+        RestAssured.port = 3000;
     }
 
     //API 3
     static Stream<Country> countryProvider() throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        List<Country> countries = mapper.readValue(GetCountriesData.ALL_COUNTRIES, new TypeReference<>() {});
+        List<Country> countries = mapper.readValue(GetCountriesData.ALL_COUNTRIES, new TypeReference<>() {
+        });
         return countries.stream();
     }
-    @ParameterizedTest
-    @MethodSource("countryProvider")
-    public void verifyGetCountriesApiByCodeResponseSchema(Country country){
-        RestAssured.given()
-                .pathParam("code", country.getCode())
-                .log().all().get(GET_COUNTRIES_BY_CODE_PATH)
+
+    static Stream<Map<String, String>> filterProvider() {
+        List<Map<String, String>> filter = new ArrayList<>();
+        filter.add(Map.of("gdp", "5000", "operator", ">"));
+        filter.add(Map.of("gdp", "5000", "operator", ">="));
+        filter.add(Map.of("gdp", "5000", "operator", "<"));
+        filter.add(Map.of("gdp", "5000", "operator", "<="));
+        filter.add(Map.of("gdp", "5000", "operator", "=="));
+        filter.add(Map.of("gdp", "5000", "operator", "!="));
+        return filter.stream();
+    }
+
+    private static CountryPagination getCountryPagination(int page, int PAGE_SIZE) {
+        Response actualResponsePagination = RestAssured.given().log().all()
+                .queryParam("page", page)
+                .queryParam("size", PAGE_SIZE)
+                .get(GET_COUNTRIES_PATH_V4);
+        return actualResponsePagination.as(new TypeRef<>() {
+        });
+    }
+
+    //API 1
+    @Test
+    public void verifyGetCountriesApiResponseSchema() {
+        RestAssured.get(GET_COUNTRIES_PATH)
                 .then()
                 .assertThat()
-                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-by-code-json-schema.json"));
+                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-json-schema.json"));
     }
-    @ParameterizedTest
-    @MethodSource("countryProvider")
-    public void verifyGetCountriesApiByCodeResponseValue(Country country){
-        Response actualResponse = RestAssured.given()
-                .pathParam("code", country.getCode())
-                .log().all().get(GET_COUNTRIES_BY_CODE_PATH);
-        assertThat(200, equalTo(actualResponse.statusCode()));
-        Country actualResponseBody = actualResponse.as(Country.class);
-        assertThat(String.format("Actual: %s\n Expected: %s\n", actualResponseBody, country),actualResponseBody, jsonEquals(country)); //since this is 2 object, we don't need to care about it's order
+
+    @Test
+    public void verifyGetCountriesApiResponseValue() {
+        String expected = GetCountriesData.ALL_COUNTRIES;
+        Response actualResponse = RestAssured.get(GET_COUNTRIES_PATH);
+        String actualResponseBody = actualResponse.asString();
+        assertThat(actualResponseBody, jsonEquals(expected).when(Option.IGNORING_ARRAY_ORDER));
+        assertThat(actualResponseBody, jsonPartEquals("[0].name", "Viet Nam")); //not needed
+    }
+
+    //API 2
+    @Test
+    public void verifyGetCountriesApiResponseSchemaV2() {
+        RestAssured.get(GET_COUNTRIES_PATH_V2)
+                .then()
+                .assertThat()
+                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-json-schema-v2.json"));
+    }
+
+    @Test
+    public void verifyGetCountriesApiResponseValueV2() {
+        String expected = GetCountriesData.ALL_COUNTRIES_V2;
+        Response actualResponse = RestAssured.get(GET_COUNTRIES_PATH_V2);
+        String actualResponseBody = actualResponse.asString();
+        assertThat(actualResponseBody, jsonEquals(expected).when(Option.IGNORING_ARRAY_ORDER));
+        assertThat(actualResponseBody, jsonPartEquals("[0].gdp", 223.9)); //not needed
     }
 
     //API 4
@@ -126,10 +129,32 @@ public class GetCountriesApiTests {
 //        }
 //    }
 
+    @ParameterizedTest
+    @MethodSource("countryProvider")
+    public void verifyGetCountriesApiByCodeResponseSchema(Country country) {
+        RestAssured.given()
+                .pathParam("code", country.getCode())
+                .log().all().get(GET_COUNTRIES_BY_CODE_PATH)
+                .then()
+                .assertThat()
+                .body(matchesJsonSchemaInClasspath("json-schema/get-countries-by-code-json-schema.json"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("countryProvider")
+    public void verifyGetCountriesApiByCodeResponseValue(Country country) {
+        Response actualResponse = RestAssured.given()
+                .pathParam("code", country.getCode())
+                .log().all().get(GET_COUNTRIES_BY_CODE_PATH);
+        assertThat(200, equalTo(actualResponse.statusCode()));
+        Country actualResponseBody = actualResponse.as(Country.class);
+        assertThat(String.format("Actual: %s\n Expected: %s\n", actualResponseBody, country), actualResponseBody, jsonEquals(country)); //since this is 2 object, we don't need to care about it's order
+    }
+
     //API 4 Get countries by filters
     @ParameterizedTest
     @MethodSource("filterProvider")
-    void verifyCountryByFilterGiven(Map<String, String> queryParams){
+    void verifyCountryByFilterGiven(Map<String, String> queryParams) {
         float actualGdp = Float.parseFloat(queryParams.get("gdp"));
         final Matcher<Float> matcher = switch (queryParams.get("operator")) {
             case "!=" -> not(equalTo(actualGdp));
@@ -144,23 +169,14 @@ public class GetCountriesApiTests {
                 .queryParam("gdp", actualGdp)
                 .queryParam("operator", queryParams.get("operator"))
                 .get(GET_COUNTRIES_PATH_V3);
-        assertThat(200,equalTo(actualResponse.statusCode()));
-        List<Country> countries = actualResponse.as(new TypeRef<>() {});
+        assertThat(200, equalTo(actualResponse.statusCode()));
+        List<Country> countries = actualResponse.as(new TypeRef<>() {
+        });
         countries.forEach(country -> assertThat(country.getGdp(), matcher));
-    }
-    static Stream<Map<String, String>> filterProvider() {
-        List<Map<String, String>> filter = new ArrayList<>();
-        filter.add(Map.of("gdp","5000", "operator", ">"));
-        filter.add(Map.of("gdp","5000", "operator", ">="));
-        filter.add(Map.of("gdp","5000", "operator", "<"));
-        filter.add(Map.of("gdp","5000", "operator", "<="));
-        filter.add(Map.of("gdp","5000", "operator", "=="));
-        filter.add(Map.of("gdp","5000", "operator", "!="));
-        return filter.stream();
     }
 
     @Test
-    void verifyGetCountriesPagination(){
+    void verifyGetCountriesPagination() {
         int PAGE_SIZE = 3;
         CountryPagination countryPaginationFirstPage = getCountryPagination(1, PAGE_SIZE);
         CountryPagination countryPaginationSecondPage = getCountryPagination(1, PAGE_SIZE);
@@ -170,7 +186,7 @@ public class GetCountriesApiTests {
 
         int sizeOfLastPage = countryPaginationFirstPage.getTotal() % PAGE_SIZE;
         int lastPage = countryPaginationFirstPage.getTotal() / PAGE_SIZE;
-        if(sizeOfLastPage>0){
+        if (sizeOfLastPage > 0) {
             lastPage++;
         } else if (sizeOfLastPage == 0) {
             sizeOfLastPage = PAGE_SIZE;
@@ -183,17 +199,8 @@ public class GetCountriesApiTests {
         //there might be a problem where number of page is 1-2, so sometimes we have to reduce the size to get more page
     }
 
-    private static CountryPagination getCountryPagination(int page, int PAGE_SIZE) {
-        Response actualResponsePagination = RestAssured.given().log().all()
-                .queryParam("page", page)
-                .queryParam("size", PAGE_SIZE)
-                .get(GET_COUNTRIES_PATH_V4);
-        return actualResponsePagination.as(new TypeRef<>() {
-        });
-    }
-
     @Test
-    void verifyGetCountriesPrivate(){
+    void verifyGetCountriesPrivate() {
         String actualResponse = RestAssured.given().log().all()
                 .header("api-key", "private")
                 .get(GET_COUNTRIES_PATH_V5).asString();

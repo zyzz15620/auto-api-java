@@ -1,149 +1,149 @@
 {
-	"info": {
-		"_postman_id": "07d9888e-77f8-40d1-8009-a5c7280e3454",
-		"name": "api-journey",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "26809357"
-	},
-	"item": [
-		{
-			"name": "retrieve",
-			"item": [
-				{
-					"name": "getCountries",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:3000/api/v1/countries",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "3000",
-							"path": [
-								"api",
-								"v1",
-								"countries"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCountriesWithGdp",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:3000/api/v2/countries",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "3000",
-							"path": [
-								"api",
-								"v2",
-								"countries"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCountryByCode",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:3000/api/v1/countries/VN",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "3000",
-							"path": [
-								"api",
-								"v1",
-								"countries",
-								"VN"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCountryByFilter",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:3000/api/v3/countries?gdp=5000&operator===",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "3000",
-							"path": [
-								"api",
-								"v3",
-								"countries"
-							],
-							"query": [
-								{
-									"key": "gdp",
-									"value": "5000"
-								},
-								{
-									"key": "operator",
-									"value": "=="
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCountriesWithPagination",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "api-key",
-								"value": "private",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:3000/api/v5/countries",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "3000",
-							"path": [
-								"api",
-								"v5",
-								"countries"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		}
-	]
+  "info": {
+    "_postman_id": "07d9888e-77f8-40d1-8009-a5c7280e3454",
+    "name": "api-journey",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "26809357"
+  },
+  "item": [
+    {
+      "name": "retrieve",
+      "item": [
+        {
+          "name": "getCountries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/countries",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "countries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getCountriesWithGdp",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v2/countries",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v2",
+                "countries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getCountryByCode",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/countries/VN",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "countries",
+                "VN"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getCountryByFilter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v3/countries?gdp=5000&operator===",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v3",
+                "countries"
+              ],
+              "query": [
+                {
+                  "key": "gdp",
+                  "value": "5000"
+                },
+                {
+                  "key": "operator",
+                  "value": "=="
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getCountriesWithPagination",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "api-key",
+                "value": "private",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v5/countries",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v5",
+                "countries"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
 }

@@ -20,30 +20,12 @@ public class LoginApiTests {
     private static final String LOGIN_PATH = "/api/login";
 
     @BeforeAll
-    static void setUp(){
+    static void setUp() {
         RestAssured.baseURI = "http://localhost";
-        RestAssured.port =  3000;
+        RestAssured.port = 3000;
     }
 
-    @Test
-    public void verifyStaffLoginValidInput(){
-        Response actualResponse = getStaffLoginResponse("staff", "1234567890");
-        assertThat(actualResponse.statusCode(), equalTo(200));
-        LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
-        assertThat(loginResponse.getToken(), not(blankString()));
-        assertThat(loginResponse.getTimeout(), equalTo(120000));
-    }
-
-    @ParameterizedTest
-    @MethodSource("invalidInputs")
-    public void verifyStaffLoginInvalidInput(List<String> InvalidInputs){
-        Response actualResponse = getStaffLoginResponse(InvalidInputs.get(1), InvalidInputs.get(2));
-        assertThat(actualResponse.statusCode(), equalTo(401));
-        LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
-        assertThat(loginResponse.getMessage(), equalTo("Invalid credentials"));
-    }
-
-    static Stream<List<String>> invalidInputs(){
+    static Stream<List<String>> invalidInputs() {
         return Stream.of(
                 Arrays.asList("Valid-Invalid", "staff", "123456780"),
                 Arrays.asList("Invalid-Valid", "staff1", "1234567890"),
@@ -54,11 +36,29 @@ public class LoginApiTests {
         );
     }
 
-    public static Response getStaffLoginResponse(String username, String password){
+    public static Response getStaffLoginResponse(String username, String password) {
         LoginInput loginInput = new LoginInput(username, password);
         return RestAssured.given().log().all()
                 .header("Content-Type", "application/json")
                 .body(loginInput)
                 .post(LOGIN_PATH);
+    }
+
+    @Test
+    public void verifyStaffLoginValidInput() {
+        Response actualResponse = getStaffLoginResponse("staff", "1234567890");
+        assertThat(actualResponse.statusCode(), equalTo(200));
+        LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
+        assertThat(loginResponse.getToken(), not(blankString()));
+        assertThat(loginResponse.getTimeout(), equalTo(120000));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidInputs")
+    public void verifyStaffLoginInvalidInput(List<String> InvalidInputs) {
+        Response actualResponse = getStaffLoginResponse(InvalidInputs.get(1), InvalidInputs.get(2));
+        assertThat(actualResponse.statusCode(), equalTo(401));
+        LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
+        assertThat(loginResponse.getMessage(), equalTo("Invalid credentials"));
     }
 }

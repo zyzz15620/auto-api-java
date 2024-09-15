@@ -40,7 +40,7 @@ public class GetCountriesData {
                         "code": "BR"
                     }
                 ]
-                """;
+            """;
 
     public static final String ALL_COUNTRIES_V2 = """
             [
@@ -49,13 +49,13 @@ public class GetCountriesData {
                          "code": "US",
                          "gdp": 21427.5
                      },
-                     
+            
                      {
                          "name": "Viet Nam",
                          "code": "VN",
                          "gdp": 223.9
                      },
-                     
+            
                      {
                          "name": "Canada",
                          "code": "CA",
@@ -92,7 +92,7 @@ public class GetCountriesData {
                          "gdp": 1868
                      }
                  ]
-                """;
+            """;
     public static String FILTER_INPUT_DATA_V3 = """
             [
               {
