@@ -26,6 +26,7 @@ public class CreateUserApiTests {
     private static final String CREATE_USER_PATH = "/api/user";
     private static final String DELETE_USER_PATH = "/api/user/{id}";
     private static final String GET_USER_PATH = "/api/user/{id}";
+    private static final String UPDATE_USER_PATH = "/api/user/{id}";
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final List<String> createdUserIds = new ArrayList<>();
     private static String token;
@@ -54,14 +55,14 @@ public class CreateUserApiTests {
 
     @Test
     public void verifyStaffCreateUserSuccessfully() throws JsonProcessingException {
+        String randomEmail = String.format("auto_api_%s@abc.com", System.currentTimeMillis()); //set a good name so that we can easy to query and delete the data
         Address address = Address.getDefault();
         User<Address> user = User.getDefault();
-        String randomEmail = String.format("auto_api_%s@abc.com", System.currentTimeMillis()); //set a name so that we can easy to query and delete the data
         user.setEmail(randomEmail);
         user.setAddresses(List.of(address));
-        //Store the moment before execution
-        Instant referenceTime = Instant.now();
 
+        //Create Request
+        Instant referenceTime = Instant.now();
         Response createUserResponse = RestAssured.given().log().all()
                 .header("Content-Type", "application/json")
                 .header("Authorization", token)
@@ -74,13 +75,13 @@ public class CreateUserApiTests {
         assertThat(actual.getId(), not(blankString()));
         assertThat(actual.getMessage(), equalTo("Customer created")); //In reality there could be a failure here due to typo in the message, so the cleaning data method wont be executed
 
+        //Get Request
         Response getCreatedUserResponse = RestAssured.given().log().all()
                 .pathParam("id", actual.getId())
                 .header(AUTHORIZATION_HEADER, token)
                 .get(GET_USER_PATH);
         System.out.printf("Get created user response: %n%s", getCreatedUserResponse.asString()); //to log
         assertThat(getCreatedUserResponse.statusCode(), equalTo(200));
-        //verify the response schema, homework
 
         ObjectMapper objectMapper = new ObjectMapper();
         GetUserResponse<AddressGetResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
@@ -89,28 +90,62 @@ public class CreateUserApiTests {
         expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
 
         String actualResponseBody = getCreatedUserResponse.asString();
-        assertThat(actualResponseBody, jsonEquals(expectedUser).whenIgnoringPaths("createdAt"
+        assertThat(actualResponseBody, jsonEquals(expectedUser).whenIgnoringPaths(
+            "createdAt"
                 , "updatedAt"
                 , "addresses[*].id"
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
 
-        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<GetUserResponse<AddressGetResponse>>() {
-        });
-
-        String addressId = actualGetUserResponse.getAddresses().get(0).getId();
-        assertTrue(addressId.matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
-
+        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {});
         Instant userCreatedAtInstant = Instant.parse(actualGetUserResponse.getCreatedAt());
         Instant userUpdatedAtInstant = Instant.parse(actualGetUserResponse.getUpdatedAt());
         datetimeVerifier(referenceTime, userCreatedAtInstant);
         datetimeVerifier(referenceTime, userUpdatedAtInstant);
+        for(AddressGetResponse addressGetResponse : actualGetUserResponse.getAddresses()){
+            assertTrue(addressGetResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+            Instant addressCreatedAtInstant = Instant.parse(addressGetResponse.getCreatedAt());
+            Instant addressUpdatedAtInstant = Instant.parse(addressGetResponse.getUpdatedAt());
+            datetimeVerifier(referenceTime, addressCreatedAtInstant);
+            datetimeVerifier(referenceTime, addressUpdatedAtInstant);
+        }
 
-        //good practice is using for each, in case there might be more than 1 in the array
-        Instant addressCreatedAtInstant = Instant.parse(actualGetUserResponse.getAddresses().get(0).getCreatedAt());
-        Instant addressUpdatedAtInstant = Instant.parse(actualGetUserResponse.getAddresses().get(0).getUpdatedAt());
-        datetimeVerifier(referenceTime, addressCreatedAtInstant);
-        datetimeVerifier(referenceTime, addressUpdatedAtInstant);
+        //Update Request
+        user.setFirstName("Anh Duc");
+        user.setLastName("Pham");
+        user.getAddresses().get(0).setCity("HCM");
+        user.getAddresses().get(0).setCountry("VN");
+
+        GetUserResponse<AddressGetResponse> expectedUpdatedUser = objectMapper.convertValue(user, new TypeReference<>() {});
+        expectedUpdatedUser.setId(actual.getId());
+        expectedUpdatedUser.getAddresses().get(0).setCustomerId(actual.getId());
+
+        Response getUpdateUserResponse = RestAssured.given().log().all()
+                .pathParam("id", actual.getId())
+                .header("Content-Type", "application/json")
+                .header("Authorization", token)
+                .body(user)
+                .put(UPDATE_USER_PATH);
+        System.out.printf("Update user response: %n%s", getUpdateUserResponse.asString()); //to log
+        assertThat(getUpdateUserResponse.statusCode(), equalTo(200));
+
+        //Get Request
+        Response getUpdatedUserResponse = RestAssured.given().log().all()
+                .pathParam("id", actual.getId())
+                .header(AUTHORIZATION_HEADER, token)
+                .get(GET_USER_PATH);
+        System.out.printf("Get updated user response: %n%s", getUpdatedUserResponse.asString()); //to log
+        assertThat(getUpdatedUserResponse.statusCode(), equalTo(200));
+
+        String actualUpdatedResponseBody = getUpdatedUserResponse.asString();
+        assertThat(actualUpdatedResponseBody, jsonEquals(expectedUpdatedUser).whenIgnoringPaths(
+            "createdAt"
+                , "updatedAt"
+                , "addresses[*].id"
+                , "addresses[*].createdAt"
+                , "addresses[*].updatedAt"));
+
+
     }
 
     private void datetimeVerifier(Instant timeBeforeExecution, Instant time) {
