@@ -2,12 +2,18 @@ package api.test;
 
 import api.model.login.LoginResponse;
 import api.model.user.*;
+import api.model.user.dto.DbAddress;
+import api.model.user.dto.DbUser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,18 +23,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static api.test.LoginApiTests.getStaffLoginResponse;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CreateUserApiTests {
@@ -41,11 +44,12 @@ public class CreateUserApiTests {
     private static String TOKEN;
     private static long TIMEOUT = -1;
     private static long TIMEOUT_BEFORE_GET_TOKEN = -1;
+    private static SessionFactory sessionFactory;
 
     static Stream<Arguments> validationUserProvider() throws JsonProcessingException {
         List<Arguments> argumentsList = new ArrayList<>();
         User<Address> user = User.getDefaultWithEmail();
-        Address address = Address.getDefault();
+        Address address;  //tại sao nó hiểu mặc định là dùng getDefault()?
 
         //FirstName
         user.setFirstName(null);
@@ -314,11 +318,27 @@ public class CreateUserApiTests {
     static void setUp() {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = 3000;
+        // A SessionFactory is set up once for an application!
+        final StandardServiceRegistry registry =
+                new StandardServiceRegistryBuilder()
+                        .build();
+        try {
+            sessionFactory = new MetadataSources(registry)
+                            .addAnnotatedClass(DbUser.class)
+                            .addAnnotatedClass(DbAddress.class)
+                            .buildMetadata()
+                            .buildSessionFactory();
+        }
+        catch (Exception e) {
+            // The registry would be destroyed by the SessionFactory, but we
+            // had trouble building the SessionFactory so destroy it manually.
+            StandardServiceRegistryBuilder.destroy(registry);
+        }
     }
 
     @BeforeEach
-    void beforeEach(){
-        if(TIMEOUT== -1 || (System.currentTimeMillis() - TIMEOUT_BEFORE_GET_TOKEN) > TIMEOUT*0.8){
+    void beforeEach() {
+        if (TIMEOUT == -1 || (System.currentTimeMillis() - TIMEOUT_BEFORE_GET_TOKEN) > TIMEOUT * 0.8) {
             TIMEOUT_BEFORE_GET_TOKEN = System.currentTimeMillis();
             Response actualResponse = getStaffLoginResponse("staff", "1234567890");
             assertThat(actualResponse.statusCode(), equalTo(200));  //We still need assertion here because if it fails, the other tests won't need to run which helps to save time
@@ -341,7 +361,7 @@ public class CreateUserApiTests {
 
     @ParameterizedTest
     @MethodSource("validationUserProvider")
-    public void verifyRequiredFieldWhenCreateUser(String testCase, User<Address> user, ValidationResponse expectedValidationResponse){
+    public void verifyRequiredFieldWhenCreateUser(String testCase, User<Address> user, ValidationResponse expectedValidationResponse) {
         Response createUserResponse = RestAssured.given().log().all()
                 .header("Content-Type", "application/json")
                 .header("Authorization", TOKEN)
@@ -349,6 +369,12 @@ public class CreateUserApiTests {
                 .post(CREATE_USER_PATH);
         assertThat(createUserResponse.statusCode(), equalTo(400));
         assertThat(createUserResponse.as(ValidationResponse.class), samePropertyValuesAs(expectedValidationResponse));
+
+        //add userID if the user is created successfully status 200
+        if (createUserResponse.statusCode() == 200) {
+            CreateUserResponse actual = createUserResponse.as(CreateUserResponse.class);
+            createdUserIds.add(actual.getId());
+        }
     }
 
 
@@ -453,18 +479,19 @@ public class CreateUserApiTests {
 
         String actualResponseBody = getCreatedUserResponse.asString();
         assertThat(actualResponseBody, jsonEquals(expectedUser).whenIgnoringPaths(
-            "createdAt"
+                "createdAt"
                 , "updatedAt"
                 , "addresses[*].id"
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
 
-        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {});
+        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
+        });
         Instant userCreatedAtInstant = Instant.parse(actualGetUserResponse.getCreatedAt());
         Instant userUpdatedAtInstant = Instant.parse(actualGetUserResponse.getUpdatedAt());
         datetimeVerifier(referenceTime, userCreatedAtInstant);
         datetimeVerifier(referenceTime, userUpdatedAtInstant);
-        for(AddressGetResponse addressGetResponse : actualGetUserResponse.getAddresses()){
+        for (AddressGetResponse addressGetResponse : actualGetUserResponse.getAddresses()) {
             assertTrue(addressGetResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
             Instant addressCreatedAtInstant = Instant.parse(addressGetResponse.getCreatedAt());
             Instant addressUpdatedAtInstant = Instant.parse(addressGetResponse.getUpdatedAt());
@@ -478,7 +505,8 @@ public class CreateUserApiTests {
         user.getAddresses().get(0).setCity("HCM");
         user.getAddresses().get(0).setCountry("VN");
 
-        GetUserResponse<AddressGetResponse> expectedUpdatedUser = objectMapper.convertValue(user, new TypeReference<>() {});
+        GetUserResponse<AddressGetResponse> expectedUpdatedUser = objectMapper.convertValue(user, new TypeReference<>() {
+        });
         expectedUpdatedUser.setId(actual.getId());
         expectedUpdatedUser.getAddresses().get(0).setCustomerId(actual.getId());
 
@@ -501,13 +529,103 @@ public class CreateUserApiTests {
 
         String actualUpdatedResponseBody = getUpdatedUserResponse.asString();
         assertThat(actualUpdatedResponseBody, jsonEquals(expectedUpdatedUser).whenIgnoringPaths(
-            "createdAt"
+                "createdAt"
                 , "updatedAt"
                 , "addresses[*].id"
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
 
 
+    }
+
+
+    @Test
+    public void verifyStaffCreateUserSuccessfullyByDataBase() throws JsonProcessingException {
+        String randomEmail = String.format("auto_api_%s@abc.com", System.currentTimeMillis()); //set a good name so that we can easy to query and delete the data
+        Address address = Address.getDefault();
+        User<Address> user = User.getDefault();
+        user.setEmail(randomEmail);
+        user.setAddresses(List.of(address));
+
+        //Create Request
+        Instant referenceTime = Instant.now();
+        Response createUserResponse = RestAssured.given().log().all()
+                .header("Content-Type", "application/json")
+                .header("Authorization", TOKEN)
+                .body(user)
+                .post(CREATE_USER_PATH);
+        System.out.printf("Create user response: %n%s", createUserResponse.asString()); //to log
+        assertThat(createUserResponse.statusCode(), equalTo(200));
+        CreateUserResponse actual = createUserResponse.as(CreateUserResponse.class);
+        createdUserIds.add(actual.getId());
+        assertThat(actual.getId(), not(blankString()));
+        assertThat(actual.getMessage(), equalTo("Customer created")); //In reality there could be a failure here due to typo in the message, so the cleaning data method wont be executed
+
+        //Build expected user
+        ObjectMapper objectMapper = new ObjectMapper();
+        GetUserResponse<AddressGetResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
+        });
+        expectedUser.setId(actual.getId());
+        expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
+
+
+        sessionFactory.inTransaction(session -> {
+            DbUser dbUser = session.createSelectionQuery("from DbUser where id=:id", DbUser.class)
+                    .setParameter("id", UUID.fromString(actual.getId()))
+                    .getSingleResult();
+            List<DbAddress> dbAddresses = session.createSelectionQuery("from DbAddress where customerId=:customerId", DbAddress.class)
+                    .setParameter("customerId", UUID.fromString(actual.getId()))
+                    .getResultList();
+//            GetUserResponse<AddressGetResponse> actualUser = objectMapper.convertValue(dbUser, new TypeReference<>() {});
+//            List<AddressGetResponse> actualAddress = objectMapper.convertValue(dbAddresses, new TypeReference<>() {});
+
+            String jsonDbUser = null;
+            try {
+                jsonDbUser = objectMapper.writeValueAsString(dbUser);
+                String jsonDbAddress = objectMapper.writeValueAsString(dbAddresses);
+                GetUserResponse<AddressGetResponse> actualUser = objectMapper.readValue(jsonDbUser, GetUserResponse.class);
+
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+
+
+        });
+//        //Get Request
+//        Response getCreatedUserResponse = RestAssured.given().log().all()
+//                .pathParam("id", actual.getId())
+//                .header(AUTHORIZATION_HEADER, TOKEN)
+//                .get(GET_USER_PATH);
+//        System.out.printf("Get created user response: %n%s", getCreatedUserResponse.asString()); //to log
+//        assertThat(getCreatedUserResponse.statusCode(), equalTo(200));
+//
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        GetUserResponse<AddressGetResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
+//        });
+//        expectedUser.setId(actual.getId());
+//        expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
+//
+//        String actualResponseBody = getCreatedUserResponse.asString();
+//        assertThat(actualResponseBody, jsonEquals(expectedUser).whenIgnoringPaths(
+//                "createdAt"
+//                , "updatedAt"
+//                , "addresses[*].id"
+//                , "addresses[*].createdAt"
+//                , "addresses[*].updatedAt"));
+//
+//        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
+//        });
+//        Instant userCreatedAtInstant = Instant.parse(actualGetUserResponse.getCreatedAt());
+//        Instant userUpdatedAtInstant = Instant.parse(actualGetUserResponse.getUpdatedAt());
+//        datetimeVerifier(referenceTime, userCreatedAtInstant);
+//        datetimeVerifier(referenceTime, userUpdatedAtInstant);
+//        for (AddressGetResponse addressGetResponse : actualGetUserResponse.getAddresses()) {
+//            assertTrue(addressGetResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+//            Instant addressCreatedAtInstant = Instant.parse(addressGetResponse.getCreatedAt());
+//            Instant addressUpdatedAtInstant = Instant.parse(addressGetResponse.getUpdatedAt());
+//            datetimeVerifier(referenceTime, addressCreatedAtInstant);
+//            datetimeVerifier(referenceTime, addressUpdatedAtInstant);
+//        }
     }
 
     private void datetimeVerifier(Instant timeBeforeExecution, Instant time) {

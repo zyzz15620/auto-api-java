@@ -19,6 +19,9 @@ dependencies {
     //help generate class
     testCompileOnly 'org.projectlombok:lombok:1.18.34'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    testImplementation "org.hibernate.orm:hibernate-core:6.6.1.Final"
+    testImplementation group: 'org.postgresql', name: 'postgresql', version: '42.7.4'
 }
 
 test {
