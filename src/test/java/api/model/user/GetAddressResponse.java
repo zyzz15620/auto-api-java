@@ -9,7 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class AddressGetResponse extends Address {
+public class GetAddressResponse extends Address {
     private String id;
     private String customerId;
     private String createdAt;

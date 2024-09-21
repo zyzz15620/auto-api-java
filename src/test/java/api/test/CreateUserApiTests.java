@@ -7,6 +7,8 @@ import api.model.user.dto.DbUser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
@@ -411,7 +413,7 @@ public class CreateUserApiTests {
         assertThat(getCreatedUserResponse.statusCode(), equalTo(200));
 
         ObjectMapper objectMapper = new ObjectMapper();
-        GetUserResponse<AddressGetResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
+        GetUserResponse<GetAddressResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
         });
         expectedUser.setId(actual.getId());
         expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
@@ -425,16 +427,16 @@ public class CreateUserApiTests {
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
 
-        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
+        GetUserResponse<GetAddressResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
         });
         Instant userCreatedAtInstant = Instant.parse(actualGetUserResponse.getCreatedAt());
         Instant userUpdatedAtInstant = Instant.parse(actualGetUserResponse.getUpdatedAt());
         datetimeVerifier(referenceTime, userCreatedAtInstant);
         datetimeVerifier(referenceTime, userUpdatedAtInstant);
-        for (AddressGetResponse addressGetResponse : actualGetUserResponse.getAddresses()) {
-            assertTrue(addressGetResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
-            Instant addressCreatedAtInstant = Instant.parse(addressGetResponse.getCreatedAt());
-            Instant addressUpdatedAtInstant = Instant.parse(addressGetResponse.getUpdatedAt());
+        for (GetAddressResponse getAddressResponse : actualGetUserResponse.getAddresses()) {
+            assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+            Instant addressCreatedAtInstant = Instant.parse(getAddressResponse.getCreatedAt());
+            Instant addressUpdatedAtInstant = Instant.parse(getAddressResponse.getUpdatedAt());
             datetimeVerifier(referenceTime, addressCreatedAtInstant);
             datetimeVerifier(referenceTime, addressUpdatedAtInstant);
         }
@@ -472,7 +474,7 @@ public class CreateUserApiTests {
         assertThat(getCreatedUserResponse.statusCode(), equalTo(200));
 
         ObjectMapper objectMapper = new ObjectMapper();
-        GetUserResponse<AddressGetResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
+        GetUserResponse<GetAddressResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
         });
         expectedUser.setId(actual.getId());
         expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
@@ -485,16 +487,16 @@ public class CreateUserApiTests {
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
 
-        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
+        GetUserResponse<GetAddressResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
         });
         Instant userCreatedAtInstant = Instant.parse(actualGetUserResponse.getCreatedAt());
         Instant userUpdatedAtInstant = Instant.parse(actualGetUserResponse.getUpdatedAt());
         datetimeVerifier(referenceTime, userCreatedAtInstant);
         datetimeVerifier(referenceTime, userUpdatedAtInstant);
-        for (AddressGetResponse addressGetResponse : actualGetUserResponse.getAddresses()) {
-            assertTrue(addressGetResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
-            Instant addressCreatedAtInstant = Instant.parse(addressGetResponse.getCreatedAt());
-            Instant addressUpdatedAtInstant = Instant.parse(addressGetResponse.getUpdatedAt());
+        for (GetAddressResponse getAddressResponse : actualGetUserResponse.getAddresses()) {
+            assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+            Instant addressCreatedAtInstant = Instant.parse(getAddressResponse.getCreatedAt());
+            Instant addressUpdatedAtInstant = Instant.parse(getAddressResponse.getUpdatedAt());
             datetimeVerifier(referenceTime, addressCreatedAtInstant);
             datetimeVerifier(referenceTime, addressUpdatedAtInstant);
         }
@@ -505,7 +507,7 @@ public class CreateUserApiTests {
         user.getAddresses().get(0).setCity("HCM");
         user.getAddresses().get(0).setCountry("VN");
 
-        GetUserResponse<AddressGetResponse> expectedUpdatedUser = objectMapper.convertValue(user, new TypeReference<>() {
+        GetUserResponse<GetAddressResponse> expectedUpdatedUser = objectMapper.convertValue(user, new TypeReference<>() {
         });
         expectedUpdatedUser.setId(actual.getId());
         expectedUpdatedUser.getAddresses().get(0).setCustomerId(actual.getId());
@@ -563,11 +565,12 @@ public class CreateUserApiTests {
 
         //Build expected user
         ObjectMapper objectMapper = new ObjectMapper();
-        GetUserResponse<AddressGetResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
+//        objectMapper.registerModule(new JavaTimeModule());
+//        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        GetUserResponse<GetAddressResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
         });
         expectedUser.setId(actual.getId());
         expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
-
 
         sessionFactory.inTransaction(session -> {
             DbUser dbUser = session.createSelectionQuery("from DbUser where id=:id", DbUser.class)
@@ -576,20 +579,32 @@ public class CreateUserApiTests {
             List<DbAddress> dbAddresses = session.createSelectionQuery("from DbAddress where customerId=:customerId", DbAddress.class)
                     .setParameter("customerId", UUID.fromString(actual.getId()))
                     .getResultList();
-//            GetUserResponse<AddressGetResponse> actualUser = objectMapper.convertValue(dbUser, new TypeReference<>() {});
-//            List<AddressGetResponse> actualAddress = objectMapper.convertValue(dbAddresses, new TypeReference<>() {});
-
-            String jsonDbUser = null;
-            try {
-                jsonDbUser = objectMapper.writeValueAsString(dbUser);
-                String jsonDbAddress = objectMapper.writeValueAsString(dbAddresses);
-                GetUserResponse<AddressGetResponse> actualUser = objectMapper.readValue(jsonDbUser, GetUserResponse.class);
-
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            GetUserResponse<GetAddressResponse> actualUser = objectMapper.convertValue(dbUser, new TypeReference<>() {
+            });
+            List<GetAddressResponse> actualAddress = objectMapper.convertValue(dbAddresses, new TypeReference<>() {
+            });
 
 
+            actualUser.setAddresses(actualAddress);
+
+        assertThat(actualUser, jsonEquals(expectedUser).whenIgnoringPaths(
+                "createdAt"
+                , "updatedAt"
+                , "addresses[*].id"
+                , "addresses[*].createdAt"
+                , "addresses[*].updatedAt"));
+
+        Instant userCreatedAtInstant = Instant.parse(actualUser.getCreatedAt());
+        Instant userUpdatedAtInstant = Instant.parse(actualUser.getUpdatedAt());
+        datetimeVerifier(referenceTime, userCreatedAtInstant);
+        datetimeVerifier(referenceTime, userUpdatedAtInstant);
+        for (GetAddressResponse addressGetResponse : actualUser.getAddresses()) {
+            assertTrue(addressGetResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+            Instant addressCreatedAtInstant = Instant.parse(addressGetResponse.getCreatedAt());
+            Instant addressUpdatedAtInstant = Instant.parse(addressGetResponse.getUpdatedAt());
+            datetimeVerifier(referenceTime, addressCreatedAtInstant);
+            datetimeVerifier(referenceTime, addressUpdatedAtInstant);
+        }
         });
 //        //Get Request
 //        Response getCreatedUserResponse = RestAssured.given().log().all()
