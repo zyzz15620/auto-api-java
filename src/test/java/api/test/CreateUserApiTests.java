@@ -1,5 +1,7 @@
 package api.test;
 
+import api.common.DatabaseConnection;
+import api.common.RestAssuredSetUp;
 import api.model.login.LoginResponse;
 import api.model.user.*;
 import api.model.user.dto.DbAddress;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static api.common.ConstantUtils.*;
 import static api.test.LoginApiTests.getStaffLoginResponse;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,16 +40,12 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CreateUserApiTests {
-    private static final String CREATE_USER_PATH = "/api/user";
-    private static final String DELETE_USER_PATH = "/api/user/{id}";
-    private static final String GET_USER_PATH = "/api/user/{id}";
-    private static final String UPDATE_USER_PATH = "/api/user/{id}";
-    private static final String AUTHORIZATION_HEADER = "Authorization";
+
     private static final List<String> createdUserIds = new ArrayList<>();
     private static String TOKEN;
     private static long TIMEOUT = -1;
     private static long TIMEOUT_BEFORE_GET_TOKEN = -1;
-    private static SessionFactory sessionFactory;
+    private static final SessionFactory sessionFactory = DatabaseConnection.getSessionFactory();
 
     static Stream<Arguments> validationUserProvider() throws JsonProcessingException {
         List<Arguments> argumentsList = new ArrayList<>();
@@ -318,24 +317,7 @@ public class CreateUserApiTests {
 
     @BeforeAll
     static void setUp() {
-        RestAssured.baseURI = "http://localhost";
-        RestAssured.port = 3000;
-        // A SessionFactory is set up once for an application!
-        final StandardServiceRegistry registry =
-                new StandardServiceRegistryBuilder()
-                        .build();
-        try {
-            sessionFactory = new MetadataSources(registry)
-                            .addAnnotatedClass(DbUser.class)
-                            .addAnnotatedClass(DbAddress.class)
-                            .buildMetadata()
-                            .buildSessionFactory();
-        }
-        catch (Exception e) {
-            // The registry would be destroyed by the SessionFactory, but we
-            // had trouble building the SessionFactory so destroy it manually.
-            StandardServiceRegistryBuilder.destroy(registry);
-        }
+        RestAssuredSetUp.setUp();
     }
 
     @BeforeEach
@@ -536,8 +518,6 @@ public class CreateUserApiTests {
                 , "addresses[*].id"
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
-
-
     }
 
 

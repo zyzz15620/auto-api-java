@@ -1,5 +1,6 @@
 package api.test;
 
+import api.common.RestAssuredSetUp;
 import api.model.login.LoginInput;
 import api.model.login.LoginResponse;
 import io.restassured.RestAssured;
@@ -13,16 +14,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static api.common.ConstantUtils.LOGIN_PATH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class LoginApiTests {
-    private static final String LOGIN_PATH = "/api/login";
-
     @BeforeAll
     static void setUp() {
-        RestAssured.baseURI = "http://localhost";
-        RestAssured.port = 3000;
+        RestAssuredSetUp.setUp();
     }
 
     static Stream<List<String>> invalidInputs() {
