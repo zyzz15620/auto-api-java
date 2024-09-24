@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static api.common.ConstantUtils.*;
+import static api.common.MethodUtils.datetimeVerifier;
 import static api.test.LoginApiTests.getStaffLoginResponse;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -586,46 +587,8 @@ public class CreateUserApiTests {
             datetimeVerifier(referenceTime, addressUpdatedAtInstant);
         }
         });
-//        //Get Request
-//        Response getCreatedUserResponse = RestAssured.given().log().all()
-//                .pathParam("id", actual.getId())
-//                .header(AUTHORIZATION_HEADER, TOKEN)
-//                .get(GET_USER_PATH);
-//        System.out.printf("Get created user response: %n%s", getCreatedUserResponse.asString()); //to log
-//        assertThat(getCreatedUserResponse.statusCode(), equalTo(200));
-//
-//        ObjectMapper objectMapper = new ObjectMapper();
-//        GetUserResponse<AddressGetResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
-//        });
-//        expectedUser.setId(actual.getId());
-//        expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
-//
-//        String actualResponseBody = getCreatedUserResponse.asString();
-//        assertThat(actualResponseBody, jsonEquals(expectedUser).whenIgnoringPaths(
-//                "createdAt"
-//                , "updatedAt"
-//                , "addresses[*].id"
-//                , "addresses[*].createdAt"
-//                , "addresses[*].updatedAt"));
-//
-//        GetUserResponse<AddressGetResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
-//        });
-//        Instant userCreatedAtInstant = Instant.parse(actualGetUserResponse.getCreatedAt());
-//        Instant userUpdatedAtInstant = Instant.parse(actualGetUserResponse.getUpdatedAt());
-//        datetimeVerifier(referenceTime, userCreatedAtInstant);
-//        datetimeVerifier(referenceTime, userUpdatedAtInstant);
-//        for (AddressGetResponse addressGetResponse : actualGetUserResponse.getAddresses()) {
-//            assertTrue(addressGetResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
-//            Instant addressCreatedAtInstant = Instant.parse(addressGetResponse.getCreatedAt());
-//            Instant addressUpdatedAtInstant = Instant.parse(addressGetResponse.getUpdatedAt());
-//            datetimeVerifier(referenceTime, addressCreatedAtInstant);
-//            datetimeVerifier(referenceTime, addressUpdatedAtInstant);
-//        }
     }
 
-    private void datetimeVerifier(Instant timeBeforeExecution, Instant time) {
-        assertThat(time.isAfter(timeBeforeExecution), equalTo(true));
-        assertThat(time.isBefore(Instant.now()), equalTo(true));
-    }
+
 }
 
