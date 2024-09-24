@@ -73,7 +73,7 @@ public class UpdateUserApiTests
         user.setEmail(randomEmail);
         user.setAddresses(List.of(address));
 
-        //Create Request
+        //Create-Request
         Instant referenceTime = Instant.now();
         Response createUserResponse = createRequest(TOKEN, user);
         CreateUserResponse actual = createUserResponse.as(CreateUserResponse.class);
@@ -81,55 +81,129 @@ public class UpdateUserApiTests
         assertThat(actual.getId(), not(blankString()));
         assertThat(actual.getMessage(), equalTo("Customer created"));
 
-        //Get Request
-        Response getCreatedUserResponse = getRequest(actual.getId(), TOKEN);
-
+        //Create expectedGetUserResponse
         ObjectMapper objectMapper = new ObjectMapper();
-        GetUserResponse<GetAddressResponse> expectedUser = objectMapper.convertValue(user, new TypeReference<>() {
-        });
-        expectedUser.setId(actual.getId());
-        expectedUser.getAddresses().get(0).setCustomerId(actual.getId());
+        GetUserResponse<GetAddressResponse> expectedGetUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
+        expectedGetUserResponse.setId(actual.getId());
+        expectedGetUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
 
-        String actualResponseBody = getCreatedUserResponse.asString();
-        assertThat(actualResponseBody, jsonEquals(expectedUser).whenIgnoringPaths(
+        //Get-Request & Assert
+        Response getCreatedUserResponse = getRequest(actual.getId(), TOKEN);
+        GetUserResponse<GetAddressResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {});
+        assertThat(actualGetUserResponse, jsonEquals(expectedGetUserResponse).whenIgnoringPaths(
                 "createdAt"
                 , "updatedAt"
                 , "addresses[*].id"
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
 
-        GetUserResponse<GetAddressResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {
-        });
-        Instant userCreatedAtInstant = Instant.parse(actualGetUserResponse.getCreatedAt());
-        Instant userUpdatedAtInstant = Instant.parse(actualGetUserResponse.getUpdatedAt());
-        datetimeVerifier(referenceTime, userCreatedAtInstant);
-        datetimeVerifier(referenceTime, userUpdatedAtInstant);
+        datetimeVerifier(referenceTime, actualGetUserResponse.getCreatedAt());
+        datetimeVerifier(referenceTime, actualGetUserResponse.getUpdatedAt());
         for (GetAddressResponse getAddressResponse : actualGetUserResponse.getAddresses()) {
             assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
-            Instant addressCreatedAtInstant = Instant.parse(getAddressResponse.getCreatedAt());
-            Instant addressUpdatedAtInstant = Instant.parse(getAddressResponse.getUpdatedAt());
-            datetimeVerifier(referenceTime, addressCreatedAtInstant);
-            datetimeVerifier(referenceTime, addressUpdatedAtInstant);
+            datetimeVerifier(referenceTime, getAddressResponse.getCreatedAt());
+            datetimeVerifier(referenceTime, getAddressResponse.getUpdatedAt());
         }
 
-        //Update Request
+        //Update-Request, also update expectedGetUserResponse
         user.setFirstName("Anh Duc");
         user.setLastName("Pham");
         user.getAddresses().get(0).setCity("HCM");
         user.getAddresses().get(0).setCountry("VN");
-        GetUserResponse<GetAddressResponse> expectedUpdatedUser = objectMapper.convertValue(user, new TypeReference<>() {});
-        expectedUpdatedUser.setId(actual.getId());
-        expectedUpdatedUser.getAddresses().get(0).setCustomerId(actual.getId());
+        expectedGetUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
+        expectedGetUserResponse.setId(actual.getId());
+        expectedGetUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
         updateUser(TOKEN, actual.getId(), user);
 
-        //Get Request
+        //Get-Request & Assert
         Response getUpdatedUserResponse = getRequest(actual.getId(), TOKEN);
-        String actualUpdatedResponseBody = getUpdatedUserResponse.asString();
-        assertThat(actualUpdatedResponseBody, jsonEquals(expectedUpdatedUser).whenIgnoringPaths(
+        GetUserResponse<GetAddressResponse> actualUpdatedResponseBody = getUpdatedUserResponse.as(new TypeRef<>() {});
+        assertThat(actualUpdatedResponseBody, jsonEquals(expectedGetUserResponse).whenIgnoringPaths(
                 "createdAt"
                 , "updatedAt"
                 , "addresses[*].id"
                 , "addresses[*].createdAt"
                 , "addresses[*].updatedAt"));
+
+        datetimeVerifier(referenceTime, actualUpdatedResponseBody.getCreatedAt());
+        datetimeVerifier(referenceTime, actualUpdatedResponseBody.getUpdatedAt());
+        for (GetAddressResponse getAddressResponse : actualUpdatedResponseBody.getAddresses()) {
+            assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+            datetimeVerifier(referenceTime, getAddressResponse.getCreatedAt());
+            datetimeVerifier(referenceTime, getAddressResponse.getUpdatedAt());
+        }
+    }
+
+    @Test
+    public void verifyUpdateUserSuccessfullyByDB() throws JsonProcessingException {
+        String randomEmail = getRandomEmail();
+        Address address = Address.getDefault();
+        User<Address> user = User.getDefault();
+        user.setEmail(randomEmail);
+        user.setAddresses(List.of(address));
+
+        //Create-Request
+        Instant referenceTime = Instant.now();
+        Response createUserResponse = createRequest(TOKEN, user);
+        CreateUserResponse actual = createUserResponse.as(CreateUserResponse.class);
+        createdUserIds.add(actual.getId());
+        assertThat(actual.getId(), not(blankString()));
+        assertThat(actual.getMessage(), equalTo("Customer created"));
+
+        //Create expectedGetUserResponse
+        ObjectMapper objectMapper = new ObjectMapper();
+        final GetUserResponse<GetAddressResponse> expectedGetUserResponse = objectMapper.convertValue(user, new TypeReference<>() {
+        });
+        expectedGetUserResponse.setId(actual.getId());
+        expectedGetUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
+
+        //GetUserFromDB & Assert
+        sessionFactory.inTransaction(session -> {
+            GetUserResponse<GetAddressResponse> actualGetUserResponse = getUserFromDB(actual.getId(), TOKEN, objectMapper, session);
+            assertThat(actualGetUserResponse, jsonEquals(expectedGetUserResponse).whenIgnoringPaths(
+                    "createdAt"
+                    , "updatedAt"
+                    , "addresses[*].id"
+                    , "addresses[*].createdAt"
+                    , "addresses[*].updatedAt"));
+
+            datetimeVerifier(referenceTime, actualGetUserResponse.getCreatedAt());
+            datetimeVerifier(referenceTime, actualGetUserResponse.getUpdatedAt());
+            for (GetAddressResponse getAddressResponse : actualGetUserResponse.getAddresses()) {
+                assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+                datetimeVerifier(referenceTime, getAddressResponse.getCreatedAt());
+                datetimeVerifier(referenceTime, getAddressResponse.getUpdatedAt());
+            }});
+
+            //Update-Request, and create expectedGetUpdatedUserResponse
+            user.setFirstName("Anh Duc");
+            user.setLastName("Pham");
+            user.getAddresses().get(0).setCity("HCM");
+            user.getAddresses().get(0).setCountry("VN");
+            final GetUserResponse<GetAddressResponse> expectedGetUpdatedUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
+            expectedGetUpdatedUserResponse.setId(actual.getId());
+            expectedGetUpdatedUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
+            updateUser(TOKEN, actual.getId(), user);
+
+            //Get-Request & Assert
+        sessionFactory.inTransaction(session -> {
+            Response getUpdatedUserResponse = getRequest(actual.getId(), TOKEN);
+            GetUserResponse<GetAddressResponse> actualUpdatedResponseBody = getUpdatedUserResponse.as(new TypeRef<>() {
+            });
+            assertThat(actualUpdatedResponseBody, jsonEquals(expectedGetUpdatedUserResponse).whenIgnoringPaths(
+                    "createdAt"
+                    , "updatedAt"
+                    , "addresses[*].id"
+                    , "addresses[*].createdAt"
+                    , "addresses[*].updatedAt"));
+
+            datetimeVerifier(referenceTime, actualUpdatedResponseBody.getCreatedAt());
+            datetimeVerifier(referenceTime, actualUpdatedResponseBody.getUpdatedAt());
+            for (GetAddressResponse getAddressResponse : actualUpdatedResponseBody.getAddresses()) {
+                assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
+                datetimeVerifier(referenceTime, getAddressResponse.getCreatedAt());
+                datetimeVerifier(referenceTime, getAddressResponse.getUpdatedAt());
+            }
+        });
     }
 }
