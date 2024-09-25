@@ -31,12 +31,12 @@ import static org.hamcrest.Matchers.*;
 
 
 public class GetCountriesApiTests {
-    private static final String GET_COUNTRIES_PATH = "/apiCustomerManagement/v1/countries";
-    private static final String GET_COUNTRIES_PATH_V5 = "/apiCustomerManagement/v5/countries";
-    private static final String GET_COUNTRIES_PATH_V4 = "/apiCustomerManagement/v4/countries";
-    private static final String GET_COUNTRIES_PATH_V3 = "/apiCustomerManagement/v3/countries";
-    private static final String GET_COUNTRIES_PATH_V2 = "/apiCustomerManagement/v2/countries";
-    private static final String GET_COUNTRIES_BY_CODE_PATH = "/apiCustomerManagement/v1/countries/{code}";
+    private static final String GET_COUNTRIES_PATH = "/api/v1/countries";
+    private static final String GET_COUNTRIES_PATH_V5 = "/api/v5/countries";
+    private static final String GET_COUNTRIES_PATH_V4 = "/api/v4/countries";
+    private static final String GET_COUNTRIES_PATH_V3 = "/api/v3/countries";
+    private static final String GET_COUNTRIES_PATH_V2 = "/api/v2/countries";
+    private static final String GET_COUNTRIES_BY_CODE_PATH = "/api/v1/countries/{code}";
 
     @BeforeAll
     static void setUp() {

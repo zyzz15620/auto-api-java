@@ -1,5 +1,6 @@
 package apiCustomerManagement.common;
 
+import apiCustomerManagement.model.login.LoginInput;
 import apiCustomerManagement.model.user.Address;
 import apiCustomerManagement.model.user.GetAddressResponse;
 import apiCustomerManagement.model.user.GetUserResponse;
@@ -34,6 +35,22 @@ public class MethodUtils {
         Set<T> set1 = new HashSet<>(list1);
         Set<T> set2 = new HashSet<>(list2);
         return Collections.disjoint(set1, set2);
+    }
+
+    public static Response getStaffLoginResponse(String username, String password) {
+        LoginInput loginInput = new LoginInput(username, password);
+        return RestAssured.given().log().all()
+                .header("Content-Type", "application/json")
+                .body(loginInput)
+                .post(LOGIN_PATH);
+    }
+
+    public static Response getStaffLoginResponse() {
+        LoginInput loginInput = new LoginInput();
+        return RestAssured.given().log().all()
+                .header("Content-Type", "application/json")
+                .body(loginInput)
+                .post(LOGIN_PATH);
     }
 
     public static Response createRequest(String TOKEN, User<Address> user){

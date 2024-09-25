@@ -8,6 +8,7 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static apiCustomerManagement.common.ConstantUtils.LOGIN_PATH;
+import static apiCustomerManagement.common.MethodUtils.getStaffLoginResponse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -24,28 +26,20 @@ public class LoginApiTests {
         RestAssuredSetUp.setUp();
     }
 
-    static Stream<List<String>> invalidInputs() {
+    private static Stream<Arguments> invalidStaffAccounts(){
         return Stream.of(
-                Arrays.asList("Valid-Invalid", "staff", "123456780"),
-                Arrays.asList("Invalid-Valid", "staff1", "1234567890"),
-                Arrays.asList("Empty-Valid", "", "1234567890"),
-                Arrays.asList("Valid-Empty", "staff", ""),
-                Arrays.asList("Null-Valid", null, "1234567890"),
-                Arrays.asList("Valid-Null", "staff", null)
+                Arguments.arguments("valid-invalid", "staff", "1234"),
+                Arguments.arguments("Invalid-Valid", "staff1", "1234567890"),
+                Arguments.arguments("Empty-Valid", "", "1234567890"),
+                Arguments.arguments("Valid-Empty", "staff", ""),
+                Arguments.arguments("Null-Valid", null, "1234567890"),
+                Arguments.arguments("Valid-Null", "staff", null)
         );
-    }
-
-    public static Response getStaffLoginResponse(String username, String password) {
-        LoginInput loginInput = new LoginInput(username, password);
-        return RestAssured.given().log().all()
-                .header("Content-Type", "application/json")
-                .body(loginInput)
-                .post(LOGIN_PATH);
     }
 
     @Test
     public void verifyStaffLoginValidInput() {
-        Response actualResponse = getStaffLoginResponse("staff", "1234567890");
+        Response actualResponse = getStaffLoginResponse();
         assertThat(actualResponse.statusCode(), equalTo(200));
         LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
         assertThat(loginResponse.getToken(), not(blankString()));
@@ -53,11 +47,10 @@ public class LoginApiTests {
     }
 
     @ParameterizedTest
-    @MethodSource("invalidInputs")
-    public void verifyStaffLoginInvalidInput(List<String> InvalidInputs) {
-        Response actualResponse = getStaffLoginResponse(InvalidInputs.get(1), InvalidInputs.get(2));
+    @MethodSource("invalidStaffAccounts")
+    public void verifyStaffLoginInvalidInput(String testCase, String userName, String password) {
+        Response actualResponse = getStaffLoginResponse(userName, password);
         assertThat(actualResponse.statusCode(), equalTo(401));
-        LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
-        assertThat(loginResponse.getMessage(), equalTo("Invalid credentials"));
+        assertThat(actualResponse.asString(), equalTo("{\"message\":\"Invalid credentials\"}"));
     }
 }

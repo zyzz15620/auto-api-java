@@ -24,7 +24,6 @@ import java.util.List;
 
 import static apiCustomerManagement.common.ConstantUtils.*;
 import static apiCustomerManagement.common.MethodUtils.*;
-import static apiCustomerManagement.test.LoginApiTests.getStaffLoginResponse;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -49,7 +48,7 @@ public class CreateUserApiTests {
     void beforeEach() {
         if (TIMEOUT == -1 || (System.currentTimeMillis() - TIMEOUT_BEFORE_GET_TOKEN) > TIMEOUT * 0.8) {
             TIMEOUT_BEFORE_GET_TOKEN = System.currentTimeMillis();
-            Response actualResponse = getStaffLoginResponse("staff", "1234567890");
+            Response actualResponse = getStaffLoginResponse();
             assertThat(actualResponse.statusCode(), equalTo(200));  //We still need assertion here because if it fails, the other tests won't need to run which helps to save time
             LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
             assertThat(loginResponse.getToken(), not(blankString()));
@@ -69,7 +68,7 @@ public class CreateUserApiTests {
     }
 
     @ParameterizedTest
-    @MethodSource("api.data.UserData#validationUserProvider")
+    @MethodSource("apiCustomerManagement.data.InvalidUserData#validationUserProvider")
     public void verifyRequiredFieldWhenCreateUser(String testCase, User<Address> user, ValidationResponse expectedValidationResponse) {
         Response createUserResponse = RestAssured.given().log().all()
                 .header("Content-Type", "application/json")

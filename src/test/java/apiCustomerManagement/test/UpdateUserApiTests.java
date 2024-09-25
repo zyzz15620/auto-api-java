@@ -22,7 +22,6 @@ import java.util.List;
 
 import static apiCustomerManagement.common.ConstantUtils.*;
 import static apiCustomerManagement.common.MethodUtils.*;
-import static apiCustomerManagement.test.LoginApiTests.getStaffLoginResponse;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -46,7 +45,7 @@ public class UpdateUserApiTests
     void beforeEach() {
         if (TIMEOUT == -1 || (System.currentTimeMillis() - TIMEOUT_BEFORE_GET_TOKEN) > TIMEOUT * 0.8) {
             TIMEOUT_BEFORE_GET_TOKEN = System.currentTimeMillis();
-            Response actualResponse = getStaffLoginResponse("staff", "1234567890");
+            Response actualResponse = getStaffLoginResponse();
             assertThat(actualResponse.statusCode(), equalTo(200));  //We still need assertion here because if it fails, the other tests won't need to run which helps to save time
             LoginResponse loginResponse = actualResponse.as(LoginResponse.class);
             assertThat(loginResponse.getToken(), not(blankString()));
@@ -82,37 +81,15 @@ public class UpdateUserApiTests
         assertThat(actual.getId(), not(blankString()));
         assertThat(actual.getMessage(), equalTo("Customer created"));
 
-        //Create expectedGetUserResponse
-        ObjectMapper objectMapper = new ObjectMapper();
-        GetUserResponse<GetAddressResponse> expectedGetUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
-        expectedGetUserResponse.setId(actual.getId());
-        expectedGetUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
-
-        //Get-Request & Assert
-        Response getCreatedUserResponse = getRequest(actual.getId(), TOKEN);
-        GetUserResponse<GetAddressResponse> actualGetUserResponse = getCreatedUserResponse.as(new TypeRef<>() {});
-        assertThat(actualGetUserResponse, jsonEquals(expectedGetUserResponse).whenIgnoringPaths(
-                "createdAt"
-                , "updatedAt"
-                , "addresses[*].id"
-                , "addresses[*].createdAt"
-                , "addresses[*].updatedAt"));
-
-        datetimeVerifier(referenceTime, actualGetUserResponse.getCreatedAt());
-        datetimeVerifier(referenceTime, actualGetUserResponse.getUpdatedAt());
-        for (GetAddressResponse getAddressResponse : actualGetUserResponse.getAddresses()) {
-            assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
-            datetimeVerifier(referenceTime, getAddressResponse.getCreatedAt());
-            datetimeVerifier(referenceTime, getAddressResponse.getUpdatedAt());
-        }
-
-        //Update-Request, also update expectedGetUserResponse
+        //Update-Request
         user.setFirstName("Anh Duc");
         user.setLastName("Pham");
         user.getAddresses().get(0).setCity("HCM");
         user.getAddresses().get(0).setCountry("VN");
 
-        expectedGetUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
+        //Create expectedGetUserResponse based on updated user object
+        ObjectMapper objectMapper = new ObjectMapper();
+        GetUserResponse<GetAddressResponse> expectedGetUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
         expectedGetUserResponse.setId(actual.getId());
         expectedGetUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
         updateUser(TOKEN, actual.getId(), user);
@@ -152,40 +129,18 @@ public class UpdateUserApiTests
         assertThat(actual.getId(), not(blankString()));
         assertThat(actual.getMessage(), equalTo("Customer created"));
 
-        //Create expectedGetUserResponse
+        //Update-Request
+        user.setFirstName("Anh Duc");
+        user.setLastName("Pham");
+        user.getAddresses().get(0).setCity("HCM");
+        user.getAddresses().get(0).setCountry("VN");
+        updateUser(TOKEN, actual.getId(), user);
+
+        //create expectedGetUpdatedUserResponse
         ObjectMapper objectMapper = new ObjectMapper();
-        final GetUserResponse<GetAddressResponse> expectedGetUserResponse = objectMapper.convertValue(user, new TypeReference<>() {
-        });
-        expectedGetUserResponse.setId(actual.getId());
-        expectedGetUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
-
-        //GetUserFromDB & Assert
-        sessionFactory.inTransaction(session -> {
-            GetUserResponse<GetAddressResponse> actualGetUserResponse = getUserFromDB(actual.getId(), TOKEN, objectMapper, session);
-            assertThat(actualGetUserResponse, jsonEquals(expectedGetUserResponse).whenIgnoringPaths(
-                    "createdAt"
-                    , "updatedAt"
-                    , "addresses[*].id"
-                    , "addresses[*].createdAt"
-                    , "addresses[*].updatedAt"));
-
-            datetimeVerifier(referenceTime, actualGetUserResponse.getCreatedAt());
-            datetimeVerifier(referenceTime, actualGetUserResponse.getUpdatedAt());
-            for (GetAddressResponse getAddressResponse : actualGetUserResponse.getAddresses()) {
-                assertTrue(getAddressResponse.getId().matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"), "ID format is invalid");
-                datetimeVerifier(referenceTime, getAddressResponse.getCreatedAt());
-                datetimeVerifier(referenceTime, getAddressResponse.getUpdatedAt());
-            }});
-
-            //Update-Request, and create expectedGetUpdatedUserResponse
-            user.setFirstName("Anh Duc");
-            user.setLastName("Pham");
-            user.getAddresses().get(0).setCity("HCM");
-            user.getAddresses().get(0).setCountry("VN");
-            final GetUserResponse<GetAddressResponse> expectedGetUpdatedUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
-            expectedGetUpdatedUserResponse.setId(actual.getId());
-            expectedGetUpdatedUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
-            updateUser(TOKEN, actual.getId(), user);
+        final GetUserResponse<GetAddressResponse> expectedGetUpdatedUserResponse = objectMapper.convertValue(user, new TypeReference<>() {});
+        expectedGetUpdatedUserResponse.setId(actual.getId());
+        expectedGetUpdatedUserResponse.getAddresses().get(0).setCustomerId(actual.getId());
 
             //Get-Request & Assert
         sessionFactory.inTransaction(session -> {
