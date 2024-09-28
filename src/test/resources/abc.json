@@ -1,21 +1,7 @@
 {
-  "firstName": "John",
-  "lastName": "Doe",
-  "middleName": "Smith",
-  "birthday": "01-23-2000",
-  "email": "meow@xyz.com",
-  "phone": "0123456789",
-  "address": [
-    {
-      "streetNumber": "123",
-      "street": "Main St",
-      "ward": "Ward 1",
-      "district": "District 1",
-      "city": "Thu Duc",
-      "state": "Ho Chi Minh",
-      "zip": "7000",
-      "country": "VN"
-    }
-  ]
+  "id": "8eb8f91a-9034-42bc-b966-2240e8e8f5f4",
+  "name": "Pham Duc",
+  "cardColor": "Sliver",
+  "textColor": "Black",
+  "material": "Plastic"
 }
-
