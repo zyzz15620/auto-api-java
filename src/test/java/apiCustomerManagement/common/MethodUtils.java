@@ -1,6 +1,7 @@
 package apiCustomerManagement.common;
 
 import apiCustomerManagement.model.login.LoginInput;
+import apiCustomerManagement.model.login.LoginResponse;
 import apiCustomerManagement.model.user.Address;
 import apiCustomerManagement.model.user.GetAddressResponse;
 import apiCustomerManagement.model.user.GetUserResponse;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static apiCustomerManagement.common.ConstantUtils.*;
+import static apiCustomerManagement.common.LoginUtils.login;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -51,6 +53,10 @@ public class MethodUtils {
                 .header("Content-Type", "application/json")
                 .body(loginInput)
                 .post(LOGIN_PATH);
+    }
+
+    public static LoginResponse loginResponse(){
+        return login("staff", "1234567890");
     }
 
     public static Response createRequest(String TOKEN, User<Address> user){

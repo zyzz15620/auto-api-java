@@ -13,7 +13,7 @@
           {
             "equalToJson": {
               "id": "${json-unit.any-string}",
-              "name": "Pham Duc",
+              "name": "Doe John",
               "cardColor": "Sliver",
               "textColor": "Black",
               "material": "Plastic"
@@ -25,7 +25,73 @@
         "status": 200,
         "jsonBody": {
           "cardNumber": "1234567890123456",
-          "cardHolder": "Pham Duc",
+          "cardHolder": "Doe John",
+          "expiredDate": "01-23-2025"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "request": {
+        "urlPath": "/card-service/build",
+        "method": "POST",
+        "headers": {
+          "api-key": {
+            "equalTo": "another-private-key"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "equalToJson": {
+              "id": "${json-unit.any-string}",
+              "name": "Doe John",
+              "cardColor": "Coral",
+              "textColor": "White",
+              "material": "Plastic"
+            }
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "cardNumber": "1234567800000000",
+          "cardHolder": "Doe John",
+          "expiredDate": "01-23-2025"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "request": {
+        "urlPath": "/card-service/build",
+        "method": "POST",
+        "headers": {
+          "api-key": {
+            "equalTo": "another-private-key"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "equalToJson": {
+              "id": "${json-unit.any-string}",
+              "name": "Doe John",
+              "cardColor": "Black",
+              "textColor": "Gray",
+              "material": "Metal"
+            }
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "cardNumber": "111111112345678",
+          "cardHolder": "Doe John",
           "expiredDate": "01-23-2025"
         },
         "headers": {

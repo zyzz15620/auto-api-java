@@ -37,8 +37,6 @@ public class CreateUserApiTests {
     private static long TIMEOUT_BEFORE_GET_TOKEN = -1;
     private static final SessionFactory sessionFactory = DatabaseConnection.getSessionFactory();
 
-
-
     @BeforeAll
     static void setUp() {
         RestAssuredSetUp.setUp();

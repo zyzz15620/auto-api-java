@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "cardNumber": {
+      "type": "string"
+    },
+    "cardHolder": {
+      "type": "string"
+    },
+    "expiredDate": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "cardNumber",
+    "cardHolder",
+    "expiredDate"
+  ]
+}
