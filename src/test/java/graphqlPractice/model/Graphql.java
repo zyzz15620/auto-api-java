@@ -1,15 +1,17 @@
-package graphqlPractice;
+package graphqlPractice.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Map;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class graphql {
+public class Graphql {
     private String query;
-    private String variable;
+    private Map<String, ?> variable;
 }

@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "person": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "birthYear": {
+              "type": "string"
+            },
+            "gender": {
+              "type": "string"
+            },
+            "height": {
+              "type": "number"
+            },
+            "mass": {
+              "type": "number"
+            },
+            "starshipConnection": {
+              "type": "object",
+              "properties": {
+                "edges": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "node": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "model": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "model"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "node"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "edges"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "birthYear",
+            "gender",
+            "height",
+            "mass",
+            "starshipConnection"
+          ]
+        }
+      },
+      "required": [
+        "person"
+      ]
+    }
+  },
+  "required": [
+    "data"
+  ]
+}
