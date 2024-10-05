@@ -213,4 +213,17 @@ public class GetCountriesData {
                     "private": 50
                 }
             ]""";
+    private String query = """
+            {
+              film(filmID:2){
+                title
+                director
+                producers
+              }
+              planet(planetID:2){
+                name
+                diameter
+              }
+            }
+            """;
 }

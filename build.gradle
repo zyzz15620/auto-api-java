@@ -37,9 +37,13 @@ dependencies {
     // WireMock
     testImplementation "org.wiremock:wiremock:3.9.1"
     testImplementation "org.assertj:assertj-core:3.24.2"
+
+    // Dotenv
+    testImplementation 'io.github.cdimascio:dotenv-java:3.0.0'
 }
 
 
 test {
+    environment("test.env", "stg.env")
     useJUnitPlatform()
 }
